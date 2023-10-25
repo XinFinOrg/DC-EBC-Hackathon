@@ -25,7 +25,7 @@ contract PerpetualDEX {
     Position[] public positions;
     mapping(address => int256) public collateralBalances;
 
-    event PositionOpened(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side, uint256 positionId);
+    event PositionOpened(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side);
     event PositionClosed(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side, int256 profit);
     event FundingPaid(uint256 fundingPayment);
 
@@ -57,7 +57,7 @@ contract PerpetualDEX {
         collateralBalances[msg.sender] += int256(collateralRequired);
 
         uint256 positionId = positions.length - 1;
-        emit PositionOpened(msg.sender, positionId, size, entryPrice, side, positionId);
+        emit PositionOpened(msg.sender, positionId, size, entryPrice, side);
     }
 
     function closePosition(uint256 positionId) external {
@@ -73,7 +73,8 @@ contract PerpetualDEX {
 
         int256 pnl = calculateProfitAndLoss(positionId);
         uint256 initialCost = getCostOfOpeningPosition(positionId);
-        uint256 fee = (uint256(initialCost) * feeRate) / 1e4;
+        uint256 currentCost = getCostOfOpeningPosition(positionId);
+        uint256 fee = (initialCost * feeRate) / 1e4;
         int256 profit = pnl - int256(fee);
         collateralBalances[admin] += int256(fee);
         
@@ -83,7 +84,7 @@ contract PerpetualDEX {
             collateralToken.transfer(msg.sender, absoluteValue(traderGets));
         }
         
-        if(-profit > int256(initialCost)){
+        if((currentCost + fee) > initialCost){
             collateralBalances[msg.sender] -= int256(initialCost);
             collateralBalances[admin] += profit + int256(initialCost);
         } else
@@ -118,9 +119,9 @@ contract PerpetualDEX {
         Side side = position.side;
 
         if (side == Side.LONG) {
-            return int256(currentPrice * size - entryPrice * size);
+            return -int256(size - (currentPrice*size)/entryPrice);
         } else {
-            return int256(entryPrice * size - currentPrice * size);
+            return int256(size - (currentPrice*size)/entryPrice);
         }
     }
 
@@ -128,7 +129,13 @@ contract PerpetualDEX {
         Position storage position = positions[positionId];
         uint256 size = position.size;
         uint256 entryPrice = position.entryPrice;
-        return entryPrice * size * 1e18;
+        return entryPrice * size;
+    }
+
+    function getCurrentCostOfosition(uint256 positionId) internal view returns (uint256) {
+        Position storage position = positions[positionId];
+        uint256 size = position.size;
+        return currentPrice * size;
     }
 
     function updatecurrentPrice(uint256 newPrice) external {
