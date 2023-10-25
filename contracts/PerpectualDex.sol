@@ -12,18 +12,20 @@ contract PerpetualDEX {
     uint256 public feeRate; // Trading fee rate, e.g., 0.005 for 0.5%
 
     enum Side { LONG, SHORT }
+    enum State { OPEN, CLOSED }
 
     struct Position {
         address trader;
         uint256 size;
         uint256 entryPrice;
         Side side;
+        State state;
     }
 
     Position[] public positions;
     mapping(address => int256) public collateralBalances;
 
-    event PositionOpened(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side);
+    event PositionOpened(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side, uint256 positionId);
     event PositionClosed(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side, int256 profit);
     event FundingPaid(uint256 fundingPayment);
 
@@ -42,19 +44,20 @@ contract PerpetualDEX {
         require(side == Side.LONG || side == Side.SHORT, "Invalid side");
 
         // Calculate collateral required
-        uint256 collateralRequired = (size * entryPrice)  / 1e18;
+        uint256 collateralRequired = (size * entryPrice);
 
         positions.push(Position({
             trader: msg.sender,
             size: size,
             entryPrice: entryPrice,
-            side: side
+            side: side,
+            state: State.OPEN
         }));
 
         collateralBalances[msg.sender] += int256(collateralRequired);
 
         uint256 positionId = positions.length - 1;
-        emit PositionOpened(msg.sender, positionId, size, entryPrice, side);
+        emit PositionOpened(msg.sender, positionId, size, entryPrice, side, positionId);
     }
 
     function closePosition(uint256 positionId) external {
@@ -62,6 +65,7 @@ contract PerpetualDEX {
 
         Position storage position = positions[positionId];
         require(position.trader == msg.sender, "Only the owner can close the position");
+        require(position.state == State.OPEN, "This position is already closed");
 
         uint256 size = position.size;
         uint256 entryPrice = position.entryPrice;
@@ -93,7 +97,7 @@ contract PerpetualDEX {
             collateralBalances[admin] += adminGets;
         }
 
-        collateralBalances[msg.sender] += int256(currentPrice * size) / 1e18;
+        collateralBalances[msg.sender] += int256(currentPrice * size);
         
         if(collateralBalances[msg.sender] < 0) {
             collateralBalances[admin] -= -collateralBalances[msg.sender];
@@ -104,9 +108,7 @@ contract PerpetualDEX {
 
         emit PositionClosed(msg.sender, positionId, size, entryPrice, side, profit);
 
-        // Remove the closed position by moving the last position to this index and truncating the array
-        positions[positionId] = positions[positions.length - 1];
-        positions.pop();
+        positions[positionId].state = State.CLOSED;
     }
 
     function calculateProfitAndLoss(uint256 positionId) internal view returns (int256) {
@@ -116,9 +118,9 @@ contract PerpetualDEX {
         Side side = position.side;
 
         if (side == Side.LONG) {
-            return int256(currentPrice * size - entryPrice * size) * 1e18;
+            return int256(currentPrice * size - entryPrice * size);
         } else {
-            return int256(entryPrice * size - currentPrice * size) * 1e18;
+            return int256(entryPrice * size - currentPrice * size);
         }
     }
 
