@@ -1,9 +1,8 @@
 const PerpetualDex = artifacts.require("PerpetualDex");
 
 // Constructor variables can be declared here
-const USDC_ADDRESS = "0xd55d4a6b2be09a42fb89a51a2a861c09cb26d6c0"; 
+const USDC_ADDRESS = "0xf9c5e4f6e627201ab2d6fb6391239738cf4bdcf9"; 
 
 module.exports = function (deployer) {
-    // deploy perpetual DEX with USDC as collateral
-    deployer.deploy(PerpetualDex, [USDC_ADDRESS]);
+    deployer.deploy(PerpetualDex, USDC_ADDRESS);
 }

@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { MNEMONIC } = process.env;
+const { MNEMONIC, PRIVATE_KEY } = process.env;
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 module.exports = {
@@ -22,6 +22,15 @@ module.exports = {
       network_id: 51,
       gasLimit: 6721975,
       confirmation: 2,
+    },
+
+    goerli: {
+      provider: () => new HDWalletProvider(
+        MNEMONIC,
+        'https://goerli.infura.io/v3/5e7c0198b2064e4fa54dd0563a3eb238'),
+      network_id: 5,
+      gasLimit: 750000,
+      confirmation: 2,
     }
   },
 
@@ -30,7 +39,7 @@ module.exports = {
 
   compilers: {
     solc: {
-      version: "0.8.20",
+      version: "0.8.17",
     }
   },
 }

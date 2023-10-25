@@ -1,10 +1,11 @@
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./IXRC20.sol";
 
 contract PerpetualDEX {
     address public admin;
-    IERC20 public collateralToken;
+    IXRC20 public collateralToken;
     uint256 public lastFundingTimestamp;
     uint256 public fundingRate;
     uint256 public indexPrice;
@@ -28,7 +29,7 @@ contract PerpetualDEX {
 
     constructor(address _collateralToken) {
         admin = msg.sender;
-        collateralToken = IERC20(_collateralToken);
+        collateralToken = IXRC20(_collateralToken);
         lastFundingTimestamp = block.timestamp;
         fundingRate = 0;
         indexPrice = 1000; // Initial index price
