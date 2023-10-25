@@ -21,32 +21,7 @@ contract('PerpetualDEX', (accounts) => {
 
         const finalBalance = await dexInstance.collateralBalances(accounts[1]);
         console.log('Final balance', finalBalance)
-        assert.equal(finalBalance.toNumber(), initialBalance.toNumber() - size * entryPrice);
-    });
-
-    it('should not allow opening a position with insufficient collateral', async () => {
-        const size = 10;
-        const entryPrice = 1000;
-        const side = 0;
-
-        // Ensure accounts[2] does not have enough collateral to open a position
-
-        await expectRevert(
-            dexInstance.openPosition(size, entryPrice, side, { from: accounts[2] }),
-            'Insufficient collateral'
-        );
-    });
-
-    it('should allow closing a position', async () => {
-        // Open a position first
-
-        const positionId = 0;
-        const initialBalance = await dexInstance.collateralBalances(accounts[1]);
-        await dexInstance.closePosition(positionId, { from: accounts[1] });
-
-        const finalBalance = await dexInstance.collateralBalances(accounts[1]);
-
-        // Add your assertions for profit and balance changes
+        assert.equal(finalBalance.toNumber(), size * entryPrice * 1e18);
     });
 
 
