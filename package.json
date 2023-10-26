@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "truffle-plugin-verify": "^0.6.5"
+  },
+  "dependencies": {
+    "eth-gas-reporter": "^0.2.27"
+  }
+}
