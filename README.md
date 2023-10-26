@@ -12,5 +12,7 @@ With growing global water scarcity, Acqua Credits isn't just a project; it's a s
 
 ## Links
 [AcquaChain Repository](https://github.com/asusrid/acquaticos)
+
 [AcquaChain Presentation](https://docs.google.com/presentation/d/1DDBla7AUtseXCUN5hWVWqzcv6fCvPaB6rCm46-xtADw/edit?usp=sharing)
+
 [AcquaChain Video](https://www.youtube.com/watch?v=E4QuJm_7rHM)
