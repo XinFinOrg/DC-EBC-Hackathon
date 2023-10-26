@@ -24,6 +24,7 @@ contract PerpetualDEX {
 
     Position[] public positions;
     mapping(address => int256) public collateralBalances;
+    mapping(address => int256) public profits;
 
     event PositionOpened(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side);
     event PositionClosed(address indexed trader, uint256 positionId, uint256 size, uint256 entryPrice, Side side, int256 profit);
@@ -35,7 +36,7 @@ contract PerpetualDEX {
         lastFundingTimestamp = block.timestamp;
         fundingRate = 0;
         currentPrice = 1000; // Initial index price
-        feeRate = 500; // 0.5% fee
+        feeRate = 50; // 0.5% fee
     }
 
     function openPosition(uint256 size, uint256 entryPrice, Side side) external {
@@ -44,7 +45,7 @@ contract PerpetualDEX {
         require(side == Side.LONG || side == Side.SHORT, "Invalid side");
 
         // Calculate collateral required
-        uint256 collateralRequired = (size * entryPrice);
+        uint256 collateralRequired = (size);
 
         positions.push(Position({
             trader: msg.sender,
@@ -72,19 +73,20 @@ contract PerpetualDEX {
         Side side = position.side;
 
         int256 pnl = calculateProfitAndLoss(positionId);
-        uint256 initialCost = getCostOfOpeningPosition(positionId);
-        uint256 currentCost = getCostOfOpeningPosition(positionId);
-        uint256 fee = (initialCost * feeRate) / 1e4;
-        int256 profit = pnl - int256(fee);
-        collateralBalances[admin] += int256(fee);
+        uint256 initialCost = position.size;
+        uint256 currentCost = getCurrentCostOfClosingPosition(positionId);
+
+        int256 profit = pnl;
         
         int256 adminGets = -profit;
         int256 traderGets = int256(initialCost) + profit;
+        
         if(traderGets > 0){
-            collateralToken.transfer(msg.sender, absoluteValue(traderGets));
+            profits[msg.sender] += traderGets;
         }
         
-        if((currentCost + fee) > initialCost){
+        // liquidation
+        if((currentCost) > initialCost){
             collateralBalances[msg.sender] -= int256(initialCost);
             collateralBalances[admin] += profit + int256(initialCost);
         } else
@@ -97,9 +99,8 @@ contract PerpetualDEX {
 
             collateralBalances[admin] += adminGets;
         }
-
-        collateralBalances[msg.sender] += int256(currentPrice * size);
         
+        // take any loses and transfer it to dex liquidity account
         if(collateralBalances[msg.sender] < 0) {
             collateralBalances[admin] -= -collateralBalances[msg.sender];
         } else {
@@ -125,34 +126,28 @@ contract PerpetualDEX {
         }
     }
 
-    function getCostOfOpeningPosition(uint256 positionId) internal view returns (uint256) {
+    function getCurrentCostOfClosingPosition(uint256 positionId) internal view returns (uint256) {
         Position storage position = positions[positionId];
         uint256 size = position.size;
-        uint256 entryPrice = position.entryPrice;
-        return entryPrice * size;
+        return (currentPrice*size)/position.entryPrice;
     }
 
-    function getCurrentCostOfosition(uint256 positionId) internal view returns (uint256) {
-        Position storage position = positions[positionId];
-        uint256 size = position.size;
-        return currentPrice * size;
-    }
-
+    // TODO: move to GoPlugin Oracle using IPriceOracle interface
     function updatecurrentPrice(uint256 newPrice) external {
         require(msg.sender == admin, "Only admin can update index price");
+        uint256 previousPrice = currentPrice;
         currentPrice = newPrice;
         uint256 timeElapsed = block.timestamp - lastFundingTimestamp;
         if (timeElapsed > 0) {
-            updateFundingRate(timeElapsed);
+            updateFundingRate(timeElapsed, previousPrice);
             lastFundingTimestamp = block.timestamp;
         }
     }
 
-    function updateFundingRate(uint256 timeElapsed) internal {
+    function updateFundingRate(uint256 timeElapsed, uint256 previousPrice) internal {
         // Implement a mechanism to calculate and update the funding rate based on timeElapsed.
-        // This is a placeholder for educational purposes.
         // Formula: fundingRate = (currentPrice - previouscurrentPrice) / previouscurrentPrice * 86400 / timeElapsed
-        fundingRate = (currentPrice * 1e18 - currentPrice * 1e18) * 86400 / timeElapsed / currentPrice;
+        fundingRate = (currentPrice  - previousPrice) * 86400 / timeElapsed / currentPrice;
     }
 
     function payFunding() external {

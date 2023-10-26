@@ -3,10 +3,9 @@ const PerpetualDEX = artifacts.require('PerpetualDEX');
 
 contract('PerpetualDEX', (accounts) => {
     let dexInstance;
-    [long1 , long2 , short1 , short2 , user] = accounts
+    [contractDeployer, long1, long2, short1, short2, user] = accounts
 
     before(async () => {
-        console.log('Accounts', accounts[2])
         dexInstance = await PerpetualDEX.new(accounts[0]);
         let size, entryPrice, side
 
@@ -37,27 +36,48 @@ contract('PerpetualDEX', (accounts) => {
 
     });
 
-    it('should close short2 position', async () => {
+    it('should close short2 position correctly', async () => {
+        const short2Index = 3;
         const initialBalance = await dexInstance.collateralBalances(short2);
-        await dexInstance.closePosition(3);
+        const tx = await dexInstance.closePosition(short2Index, { from: short2 });
 
         const finalBalance = await dexInstance.collateralBalances(short2);
         console.log('Final balance', finalBalance)
-        assert.equal(finalBalance.toNumber(), size * entryPrice * 1e18);
+        assert.equal(finalBalance.toNumber(), 0);
+
+        // assert event
+        const { logs } = tx;
+        assert.ok(Array.isArray(logs));
+        assert.equal(logs.length, 1);
+
+        const log = logs[0];
+        assert.equal(log.event, 'PositionClosed');
+        assert.equal(log.args.profit, 1);
+    });
+
+    it('should close long1 position correctly', async () => {
+        const short2Index = 0;
+        const initialBalance = await dexInstance.collateralBalances(long1);
+        const tx = await dexInstance.closePosition(short2Index, { from: long1 });
+
+        const finalBalance = await dexInstance.collateralBalances(long1);
+        console.log('Final balance', finalBalance)
+        assert.equal(finalBalance.toNumber(), 0);
+
+        // assert event
+        const { logs } = tx;
+        assert.ok(Array.isArray(logs));
+        assert.equal(logs.length, 1);
+
+        const log = logs[0];
+        assert.equal(log.event, 'PositionClosed');
+        assert.equal(log.args.profit, 0);
     });
 
 
-    // it('should allow closing a position', async () => {
-    //     // Open a position first
-
-    //     const positionId = 0;
-    //     const initialBalance = await dexInstance.collateralBalances(accounts[1]);
-    //     await dexInstance.closePosition(positionId, { from: accounts[1] });
-
-    //     const finalBalance = await dexInstance.collateralBalances(accounts[1]);
-
-    //     assert.equal
-    // });
-
+    it('should not allow to close already closed position', async () => {
+        await dexInstance.closePosition(2, { from: short1 });
+        await expectRevert(dexInstance.closePosition(2, { from: short1 }), 'This position is already closed.')
+    })
 
 });

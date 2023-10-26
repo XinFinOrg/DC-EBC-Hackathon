@@ -14,14 +14,12 @@ contract('PerpetualDEX', (accounts) => {
         const entryPrice = 1000;
         const side = 0; // 0 for LONG, 1 for SHORT
 
-        // Ensure accounts[1] has enough collateral to open a position
-
         const initialBalance = await dexInstance.collateralBalances(accounts[1]);
         await dexInstance.openPosition(size, entryPrice, side, { from: accounts[1] });
 
         const finalBalance = await dexInstance.collateralBalances(accounts[1]);
         console.log('Final balance', finalBalance)
-        assert.equal(finalBalance.toNumber(), size * entryPrice * 1e18);
+        assert.equal(finalBalance.toNumber(), size * entryPrice);
     });
 
 
