@@ -29,12 +29,12 @@ P- /newwallet: Create or import a new wallet
 P- /mywallet: See address and balance of your wallet
 P- /secret: See you private key after inputing your password
 P- /withdraw: withdraw all or part of your balance to a different address
-G- /tip: Reply to someone's group message with /tip <amount> to invoke the tipping process
+G- /tip: Reply to someone's group message with /tip [amount] to invoke the tipping process
 P- /fundraise: Start the fundraise creation process, and deploy the smart contract with the argumnts given
-G- /announce: /announce <description> to publicly announce the fundraiser through the bot
+G- /announce: /announce [description] to publicly announce the fundraiser through the bot
 
 PENDING
-- /fund: Reply to a fundraising announcement with /fund <amount> and, after inputting your pass in private, it will send the funds.
+- /fund: Reply to a fundraising announcement with /fund [amount] and, after inputting your pass in private, it will send the funds.
 
 ## Links
 [Public code Repository](https://github.com/BonifacioCalindoro/EBC-XDC-Hackathon)
